@@ -1,10 +1,7 @@
-# LogView.js - [DEMO](https://andres-website.github.io/LogView.js/)
+## LogView.js - [DEMO](https://andres-website.github.io/LogView.js/)
 
 [🇷🇺 На русском](#logviewjs---демо) | [🇬🇧 In English](#logviewjs---demo)
 
----
-
-## LogView.js - [DEMO](https://andres-website.github.io/LogView.js/)
 
 **LogView.js** is a simple open-ended JavaScript library for analyzing text logs directly in the browser, inspired by **ftlabs/logview**.  
 It works without a backend, enabling convenient log filtering, viewing, and formatting right in the browser.
@@ -28,7 +25,7 @@ This text is optimized for search queries such as **LogView.js**, **LogViewer**,
 
 ## LogView.js - [ДЕМО](https://andres-website.github.io/LogView.js/)
 
-[🇬🇧 In English](#logviewjs---demo) | [🇷🇺 На русском](#logviewjs---демо)
+[🇷🇺 На русском](#logviewjs---демо) | [🇬🇧 In English](#logviewjs---demo) 
 
 ---
 
