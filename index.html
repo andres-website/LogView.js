@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        .controls {
+            margin-bottom: 10px;
+        }
+        .log-entry {
+            border-bottom: 1px solid #ddd;
+            padding: 5px 0;
+            white-space: pre-wrap;
+        }
+        .log-level {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .DEBUG { color: gray; }
+        .INFO { color: green; }
+        .WARNING { color: orange; }
+        .ERROR { color: red; }
+        
+.DEBUG { color: #6c757d; } /* Темно-серый для отладочной информации */
+.INFO { color: #17a2b8; } /* Голубой для информационных сообщений */
+.WARNING { color: #ffc107; } /* Теплый желтый для предупреждений */
+.ERROR { color: #dc3545; } /* Красный для ошибок */
+
+.DEBUG { color: #6c757d; } /* Цвет для Debug из Bootstrap (secondary) */
+.INFO { color: #0d6efd; } /* Цвет для Info из Bootstrap (primary) */
+.WARNING { color: #ffc107; } /* Цвет для Warning из Bootstrap (warning) */
+.ERROR { color: #dc3545; } /* Цвет для Error из Bootstrap (danger) */
+
+.DEBUG { color: #607d8b; } /* Цвет для Debug из Material (blue-grey) */
+.INFO { color: #2196f3; } /* Цвет для Info из Material (blue) */
+.WARNING { color: #ff9800; } /* Цвет для Warning из Material (amber) */
+.ERROR { color: #f44336; } /* Цвет для Error из Material (red) */
+        .json_in_log {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+            font-family: monospace;
+            display: inline-block;
+            white-space: pre-wrap;
+            cursor: pointer;
+        }
+        .json_beautified {
+            background-color: #e8f7e8;
+            display: block;
+        }
+        .checkbox-group {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Log Viewer</h1>
+    <textarea id="log-input" placeholder="Paste your logs here"></textarea>
+    
+    <div class="controls">
+        <label>
+            Filter by substring: 
+            <input type="text" id="filter-substring" placeholder="Enter substring">
+        </label>
+        <div>
+            Filter by levels:
+            <div class="checkbox-group" id="filter-levels">
+                <label><input type="checkbox" value="DEBUG" checked> DEBUG</label>
+                <label><input type="checkbox" value="INFO" checked> INFO</label>
+                <label><input type="checkbox" value="WARNING" checked> WARNING</label>
+                <label><input type="checkbox" value="ERROR" checked> ERROR</label>
+            </div>
+        </div>
+        <div>
+            <button id="toggle-autorefresh">Pause Auto-Refresh</button>
+        </div>
+    </div>
+    
+    <div id="log-output"></div>
+
+    <script>
+    
+        // Configuration
+        const AUTO_REFRESH_ENABLED_DEFAULT = false; // Change to true to enable auto-refresh by default
+        const URL_TO_LOG_FILE = '/log.txt';
+
+        const logInput = document.getElementById('log-input');
+        const filterSubstring = document.getElementById('filter-substring');
+        const filterLevels = document.getElementById('filter-levels');
+        const logOutput = document.getElementById('log-output');
+        const toggleAutoRefreshButton = document.getElementById('toggle-autorefresh');
+
+        let autoRefresh = true;
+        let autoRefreshInterval;
+
+
+        // Default log file path
+        var rand = Math.random();
+        const baseUrl = URL_TO_LOG_FILE;
+
+        // Проверяем, есть ли уже параметры в URL
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        
+        // Формируем финальный URL
+        const defaultLogPath = baseUrl + separator + 'random=' + rand;
+        
+
+        // Function to fetch logs from a file
+        async function loadDefaultLogs() {
+            try {
+                var rand = Math.random();
+                // TODO
+                const response = await fetch(defaultLogPath + rand);
+                if (!response.ok) throw new Error('Failed to load default logs');
+                const text = await response.text();
+                logInput.value = text;
+                applyFilters(); // Automatically apply filters after loading
+            } catch (error) {
+                console.error(error);
+                logInput.value = 'Failed to load default logs.';
+            }
+        }
+
+        // Function to parse and render logs
+        function renderLogs(logs) {
+            logOutput.innerHTML = '';
+            logs.forEach(log => {
+                const logDiv = document.createElement('div');
+                logDiv.className = 'log-entry';
+
+                const levelSpan = document.createElement('span');
+                levelSpan.className = `log-level ${log.level}`;
+                levelSpan.textContent = `[${log.level}]`;
+
+                const messageSpan = document.createElement('span');
+                messageSpan.innerHTML = highlightJsonInText(log.message);
+
+                logDiv.appendChild(levelSpan);
+                logDiv.appendChild(messageSpan);
+                logOutput.appendChild(logDiv);
+            });
+
+            addJsonToggleBehavior();
+        }
+
+        // Parse log input
+        function parseLogs(rawLogs) {
+            const logLines = rawLogs.split('\n').filter(line => line.trim() !== '');
+            return logLines.map(line => {
+                const match = line.match(/^\[(.*?)\] (\w+): (.+)$/);
+                if (!match) return null;
+                return { timestamp: match[1], level: match[2], message: match[3] };
+            }).filter(log => log !== null);
+        }
+
+        // Highlight JSON in a string
+        function highlightJsonInText(text) {
+            const jsonMatch = text.match(/\{.*\}|\[.*\]/);
+            if (jsonMatch) {
+                try {
+                    JSON.parse(jsonMatch[0]); // Check if valid JSON
+                    return text.replace(
+                        jsonMatch[0], 
+                        `<span class='json_in_log' data-original='${jsonMatch[0]}'>${jsonMatch[0]}</span>`
+                    );
+                } catch (e) {
+                    return text; // If JSON is invalid, return the original text
+                }
+            }
+            return text;
+        }
+
+        // Add toggle behavior for JSON elements
+        function addJsonToggleBehavior() {
+            const jsonElements = document.querySelectorAll('.json_in_log');
+            jsonElements.forEach(el => {
+                el.addEventListener('click', () => {
+                    const originalJson = el.getAttribute('data-original');
+                    if (!el.dataset.expanded) {
+                        try {
+                            const parsedJson = JSON.parse(originalJson);
+                            el.textContent = JSON.stringify(parsedJson, null, 4);
+                            el.classList.add('json_beautified');
+                            el.dataset.expanded = true;
+                        } catch (e) {
+                            console.error('Invalid JSON:', originalJson);
+                        }
+                    } else {
+                        el.textContent = originalJson;
+                        el.classList.remove('json_beautified');
+                        delete el.dataset.expanded;
+                    }
+                });
+            });
+        }
+
+        // Apply filters to logs
+        function applyFilters() {
+            const rawLogs = logInput.value;
+            const substring = filterSubstring.value.toLowerCase();
+            const selectedLevels = Array.from(filterLevels.querySelectorAll('input:checked')).map(
+                checkbox => checkbox.value
+            );
+
+            const parsedLogs = parseLogs(rawLogs);
+            const filteredLogs = parsedLogs.filter(log => {
+                const matchesSubstring = log.message.toLowerCase().includes(substring);
+                const matchesLevel = selectedLevels.includes(log.level);
+                return matchesSubstring && matchesLevel;
+            });
+
+            renderLogs(filteredLogs);
+        }
+
+        // Toggle auto-refresh
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            toggleAutoRefreshButton.textContent = autoRefresh ? 'Pause Auto-Refresh' : 'Resume Auto-Refresh';
+
+            if (autoRefresh) {
+                autoRefreshInterval = setInterval(loadDefaultLogs, 5000);
+            } else {
+                clearInterval(autoRefreshInterval);
+            }
+        }
+
+        // Event listeners for real-time filtering and auto-refresh toggle
+        filterLevels.addEventListener('change', applyFilters);
+        filterSubstring.addEventListener('input', applyFilters);
+        toggleAutoRefreshButton.addEventListener('click', toggleAutoRefresh);
+
+        // Start auto-refresh on page load
+        loadDefaultLogs();
+        autoRefreshInterval = setInterval(loadDefaultLogs, 5000);
+        
+        
+    // Получаем элемент с классом .toggle-autorefresh
+    const autoRefreshButton = document.querySelector('#toggle-autorefresh');
+    
+    if (!AUTO_REFRESH_ENABLED_DEFAULT) {
+        // Проверяем, существует ли элемент
+        if (autoRefreshButton) {
+            // Эмулируем клик по кнопке
+            autoRefreshButton.click();
+        }
+    }
+    </script>
+</body>
+</html>
