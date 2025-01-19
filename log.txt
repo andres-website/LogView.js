@@ -1,0 +1,4 @@
+[2025-01-18 09:49:58] DEBUG: Query executed: SELECT * FROM users
+[2025-01-18 09:50:55] INFO: User logged in
+[2025-01-18 09:50:55] ERROR: {"service": "database", "code": 500}
+[2025-01-18 09:50:55] WARNING: Disk space low: 2GB remaining
