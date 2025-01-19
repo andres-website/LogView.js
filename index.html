@@ -105,7 +105,7 @@
                 </div>
             </div>
 
-            <button id="toggle-autorefresh" class="btn btn-light">Pause Auto-Refresh</button>
+            <button id="toggle-autorefresh" class="btn btn-light">Play Auto-Refresh</button>
         </div>
 
         <div id="log-output" class="mt-4"></div>
@@ -115,7 +115,7 @@
         // Configuration
         const AUTO_REFRESH_ENABLED_DEFAULT = false; // Change to true to enable auto-refresh by default
         const URL_TO_LOG_FILE = '/LogView.js/log.txt';
-
+        
         const logInput = document.getElementById('log-input');
         const filterSubstring = document.getElementById('filter-substring');
         const filterLevels = document.getElementById('filter-levels');
@@ -244,7 +244,7 @@
         // Toggle auto-refresh
         function toggleAutoRefresh() {
             autoRefresh = !autoRefresh;
-            toggleAutoRefreshButton.textContent = autoRefresh ? 'Play Auto-Refresh' : 'Play Auto-Refresh';
+            toggleAutoRefreshButton.textContent = autoRefresh ? 'Pause Auto-Refresh' : 'Play Auto-Refresh';
 
             if (autoRefresh) {
                 autoRefreshInterval = setInterval(loadDefaultLogs, 5000);
