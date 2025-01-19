@@ -4,10 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log Viewer</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
         }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+        }
+        
         textarea {
             width: 100%;
             height: 150px;
@@ -15,36 +25,24 @@
             font-family: monospace;
         }
         .controls {
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
         .log-entry {
             border-bottom: 1px solid #ddd;
-            padding: 5px 0;
+            padding: 10px 16px;
             white-space: pre-wrap;
+            background-color: #fff;
+            border-radius: 5px;
         }
         .log-level {
             font-weight: bold;
             margin-right: 5px;
         }
-        .DEBUG { color: gray; }
-        .INFO { color: green; }
-        .WARNING { color: orange; }
-        .ERROR { color: red; }
+        .DEBUG { color: #607d8b; } /* Цвет для Debug из Material (blue-grey) */
+        .INFO { color: #17a2b8; } /* Голубой для информационных сообщений */
+        .WARNING { color: #ff9800; } /* Цвет для Warning из Material (amber) */
+        .ERROR { color: #f44336; } /* Цвет для Error из Material (red) */
         
-.DEBUG { color: #6c757d; } /* Темно-серый для отладочной информации */
-.INFO { color: #17a2b8; } /* Голубой для информационных сообщений */
-.WARNING { color: #ffc107; } /* Теплый желтый для предупреждений */
-.ERROR { color: #dc3545; } /* Красный для ошибок */
-
-.DEBUG { color: #6c757d; } /* Цвет для Debug из Bootstrap (secondary) */
-.INFO { color: #0d6efd; } /* Цвет для Info из Bootstrap (primary) */
-.WARNING { color: #ffc107; } /* Цвет для Warning из Bootstrap (warning) */
-.ERROR { color: #dc3545; } /* Цвет для Error из Bootstrap (danger) */
-
-.DEBUG { color: #607d8b; } /* Цвет для Debug из Material (blue-grey) */
-.INFO { color: #2196f3; } /* Цвет для Info из Material (blue) */
-.WARNING { color: #ff9800; } /* Цвет для Warning из Material (amber) */
-.ERROR { color: #f44336; } /* Цвет для Error из Material (red) */
         .json_in_log {
             background-color: #f4f4f4;
             border: 1px solid #ddd;
@@ -63,35 +61,57 @@
             display: flex;
             gap: 10px;
         }
+        
+        .log-level {
+            width: 10%;
+            display: inline-block;
+        }
+        
+        .log-level {
+            width: 10%;
+            display: inline-block;
+        }
+        
+        .log-entry:hover {
+            background: #f6fdf6;
+        }
+        
+        .btn.btn-light {
+            border: 1px solid silver;
+        }
     </style>
 </head>
 <body>
-    <h1>Log Viewer</h1>
-    <textarea id="log-input" placeholder="Paste your logs here"></textarea>
-    
-    <div class="controls">
-        <label>
-            Filter by substring: 
-            <input type="text" id="filter-substring" placeholder="Enter substring">
-        </label>
-        <div>
-            Filter by levels:
-            <div class="checkbox-group" id="filter-levels">
-                <label><input type="checkbox" value="DEBUG" checked> DEBUG</label>
-                <label><input type="checkbox" value="INFO" checked> INFO</label>
-                <label><input type="checkbox" value="WARNING" checked> WARNING</label>
-                <label><input type="checkbox" value="ERROR" checked> ERROR</label>
+    <div class="container">
+        <h1 class="mb-4">Log Viewer</h1>
+
+        <div class="mb-4">
+            <textarea id="log-input" class="form-control" placeholder="Paste your logs here"></textarea>
+        </div>
+
+        <div class="controls mb-4">
+            <div class="mb-3">
+                <label for="filter-substring" class="form-label">Filter by substring:</label>
+                <input type="text" id="filter-substring" class="form-control" placeholder="Enter substring">
             </div>
+
+            <div class="mb-3">
+                <label for="filter-levels" class="form-label">Filter by levels:</label>
+                <div class="checkbox-group" id="filter-levels">
+                    <label><input type="checkbox" value="DEBUG" checked> DEBUG</label>
+                    <label><input type="checkbox" value="INFO" checked> INFO</label>
+                    <label><input type="checkbox" value="WARNING" checked> WARNING</label>
+                    <label><input type="checkbox" value="ERROR" checked> ERROR</label>
+                </div>
+            </div>
+
+            <button id="toggle-autorefresh" class="btn btn-light">Pause Auto-Refresh</button>
         </div>
-        <div>
-            <button id="toggle-autorefresh">Pause Auto-Refresh</button>
-        </div>
+
+        <div id="log-output" class="mt-4"></div>
     </div>
-    
-    <div id="log-output"></div>
 
     <script>
-    
         // Configuration
         const AUTO_REFRESH_ENABLED_DEFAULT = false; // Change to true to enable auto-refresh by default
         const URL_TO_LOG_FILE = '/log.txt';
@@ -105,7 +125,6 @@
         let autoRefresh = true;
         let autoRefreshInterval;
 
-
         // Default log file path
         var rand = Math.random();
         const baseUrl = URL_TO_LOG_FILE;
@@ -115,13 +134,11 @@
         
         // Формируем финальный URL
         const defaultLogPath = baseUrl + separator + 'random=' + rand;
-        
 
         // Function to fetch logs from a file
         async function loadDefaultLogs() {
             try {
                 var rand = Math.random();
-                // TODO
                 const response = await fetch(defaultLogPath + rand);
                 if (!response.ok) throw new Error('Failed to load default logs');
                 const text = await response.text();
@@ -227,7 +244,7 @@
         // Toggle auto-refresh
         function toggleAutoRefresh() {
             autoRefresh = !autoRefresh;
-            toggleAutoRefreshButton.textContent = autoRefresh ? 'Pause Auto-Refresh' : 'Resume Auto-Refresh';
+            toggleAutoRefreshButton.textContent = autoRefresh ? 'Play Auto-Refresh' : 'Play Auto-Refresh';
 
             if (autoRefresh) {
                 autoRefreshInterval = setInterval(loadDefaultLogs, 5000);
@@ -244,18 +261,17 @@
         // Start auto-refresh on page load
         loadDefaultLogs();
         autoRefreshInterval = setInterval(loadDefaultLogs, 5000);
+
+        // Получаем элемент с классом .toggle-autorefresh
+        const autoRefreshButton = document.querySelector('#toggle-autorefresh');
         
-        
-    // Получаем элемент с классом .toggle-autorefresh
-    const autoRefreshButton = document.querySelector('#toggle-autorefresh');
-    
-    if (!AUTO_REFRESH_ENABLED_DEFAULT) {
-        // Проверяем, существует ли элемент
-        if (autoRefreshButton) {
-            // Эмулируем клик по кнопке
-            autoRefreshButton.click();
+        if (!AUTO_REFRESH_ENABLED_DEFAULT) {
+            if (autoRefreshButton) {
+                autoRefreshButton.click();
+            }
         }
-    }
     </script>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
