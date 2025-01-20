@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+    <script>
+        
+        // Configuration
+        const URL_TO_LOG_FILE = '/LogView.js/log.txt';
+        const AUTO_REFRESH_ENABLED_DEFAULT = false; // Change to true to enable auto-refresh by default
+        const IS_REVERSE_LOGS = false;
+        
+    </script>
+    
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log Viewer</title>
@@ -12,6 +23,7 @@
             font-family: Arial, sans-serif;
             background-color: #f8f9fa;
             padding: 20px;
+    padding-bottom: 100px;
         }
         
         body {
@@ -64,13 +76,8 @@
         }
         
         .log-level {
-            width: 10%;
-            display: inline-block;
-        }
-        
-        .log-level {
-            width: 10%;
-            display: inline-block;
+
+            min-width: 110px;
         }
         
         .log-entry:hover {
@@ -80,6 +87,17 @@
         .btn.btn-light {
             border: 1px solid silver;
         }
+        
+        .btns_box.reverse {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #fff;
+            padding: 16px 16px;
+            border-top: 1px solid silver;
+        }
+
     </style>
 </head>
 <body>
@@ -99,29 +117,31 @@
             <div class="mb-3">
                 <label for="filter-levels" class="form-label">Filter by levels:</label>
                 <div class="checkbox-group" id="filter-levels">
-                    <label><input type="checkbox" value="DEBUG" checked> DEBUG</label>
+                    <label><input type="checkbox" value="DEBUG" checked0> DEBUG</label>
                     <label><input type="checkbox" value="INFO" checked> INFO</label>
                     <label><input type="checkbox" value="WARNING" checked> WARNING</label>
                     <label><input type="checkbox" value="ERROR" checked> ERROR</label>
                 </div>
             </div>
 
-            <button id="toggle-autorefresh" class="btn btn-light">Play Auto-Refresh</button>
+            <div class="btns_box reverse">
+                
+                <button id="toggle-autorefresh" class="btn btn-light">Play Auto-Refresh</button> <button id="" class="btn btn-light js_refresh_from_file">Refresh from file</button>
+            </div>
+            
         </div>
 
         <div id="log-output" class="mt-4"></div>
     </div>
 
     <script>
-        // Configuration
-        const AUTO_REFRESH_ENABLED_DEFAULT = false; // Change to true to enable auto-refresh by default
-        const URL_TO_LOG_FILE = '/LogView.js/log.txt';
-        
+
         const logInput = document.getElementById('log-input');
         const filterSubstring = document.getElementById('filter-substring');
         const filterLevels = document.getElementById('filter-levels');
         const logOutput = document.getElementById('log-output');
         const toggleAutoRefreshButton = document.getElementById('toggle-autorefresh');
+        const refreshButton = document.querySelector('.js_refresh_from_file');
 
         let autoRefresh = true;
         let autoRefreshInterval;
@@ -154,6 +174,11 @@
         // Function to parse and render logs
         function renderLogs(logs) {
             logOutput.innerHTML = '';
+            
+            if (IS_REVERSE_LOGS) {
+                logs.reverse();
+            }
+            
             logs.forEach(log => {
                 const logDiv = document.createElement('div');
                 logDiv.className = 'log-entry';
@@ -258,6 +283,7 @@
         filterLevels.addEventListener('change', applyFilters);
         filterSubstring.addEventListener('input', applyFilters);
         toggleAutoRefreshButton.addEventListener('click', toggleAutoRefresh);
+        refreshButton.addEventListener('click', loadDefaultLogs);
 
         // Start auto-refresh on page load
         loadDefaultLogs();
